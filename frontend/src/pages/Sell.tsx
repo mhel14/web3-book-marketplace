@@ -131,10 +131,14 @@ export default function Sell() {
       });
       setMyBooks((current) => current.filter((book) => book.tokenId !== selectedBook.tokenId));
       setSelectedBook(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       const message =
-        error instanceof Error ? error.message : 'Unable to list this book right now.';
+        error.code === 'ACTION_REJECTED'
+          ? 'User denied transaction signature.'
+          : error instanceof Error
+            ? error.message
+            : 'Unable to list this book right now.';
       setStatus({
         tone: 'error',
         title: 'Listing failed',

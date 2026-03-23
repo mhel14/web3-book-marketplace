@@ -190,9 +190,14 @@ export default function Marketplace() {
         message: 'The listing was purchased successfully.',
         tone: 'success',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Transaction failed.';
+      const message =
+        error.code === 'ACTION_REJECTED'
+          ? 'User denied transaction signature.'
+          : error instanceof Error
+            ? error.message
+            : 'Transaction failed.';
       setStatus({
         tone: 'error',
         title: 'Purchase failed',
@@ -253,9 +258,14 @@ export default function Marketplace() {
         message: 'The book is no longer available for purchase.',
         tone: 'success',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Unable to remove this listing.';
+      const message =
+        error.code === 'ACTION_REJECTED'
+          ? 'User denied transaction signature.'
+          : error instanceof Error
+            ? error.message
+            : 'Unable to remove this listing.';
       setStatus({
         tone: 'error',
         title: 'Removal failed',
@@ -351,10 +361,10 @@ export default function Marketplace() {
                       {removingId === book.tokenId
                         ? 'Removing...'
                         : buyingId === book.tokenId
-                        ? 'Purchasing...'
-                        : isOwnListing
-                          ? 'Remove Listing'
-                          : 'Buy Now'}
+                          ? 'Purchasing...'
+                          : isOwnListing
+                            ? 'Remove Listing'
+                            : 'Buy Now'}
                     </button>
                   </div>
                 }

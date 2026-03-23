@@ -2,11 +2,16 @@
   "name": "contracts",
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.10.0 <23"
+  },
   "scripts": {
-    "clean": "npx hardhat clean",
-    "compile": "npx hardhat compile",
-    "deploy": "npx hardhat ignition deploy ./ignition/modules/Web3BookStoreModule.ts --network sepolia",
-    "verifyContract": "npx hardhat verify --network sepolia replace-to-contract-address-here"
+    "check:node": "node -e \"const [major, minor] = process.versions.node.split('.').map(Number); if (major !== 22 || minor < 10) { console.error('Node 22.10+ is required for this project. Run nvm use.'); process.exit(1); }\"",
+    "clean": "npm run check:node && npx hardhat clean",
+    "compile": "npm run check:node && npx hardhat compile --build-profile production",
+    "test": "npm run check:node && npx hardhat test --build-profile production",
+    "deploy": "npm run check:node && npx hardhat ignition deploy ./ignition/modules/Web3BookStoreModule.ts --network sepolia --build-profile production",
+    "verifyContract": "npm run check:node && npx hardhat verify --network sepolia replace-to-contract-address-here"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.9",

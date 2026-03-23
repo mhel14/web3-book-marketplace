@@ -2,29 +2,28 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract BooksMarketplace is ReentrancyGuard, Ownable, IERC721Receiver {
+contract BooksMarketplace is ReentrancyGuard {
     struct Listing {
-        uint256 price;
+        uint96 price;
         address seller;
     }
 
-    function onERC721Received(
-        address /* operator */,
-        address /* from */,
-        uint256 /* tokenId */,
-        bytes calldata /* data */
-    ) external pure override returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
+    error PriceMustBeGreaterThanZero();
+    error PriceExceedsMax();
+    error NotTokenOwner();
+    error AlreadyListed();
+    error ItemNotListed();
+    error MarketplaceNotApproved();
+    error IncorrectPriceSent(uint256 expected, uint256 received);
+    error CannotBuyOwnBook();
+    error SellerNoLongerOwnsToken();
+    error NotSeller();
+    error TransferToSellerFailed();
 
-    // Mapping from NFT Contract Address -> Token ID -> Listing
     mapping(address => mapping(uint256 => Listing)) public listings;
 
-    // Events for frontend indexing
     event BookListed(
         address indexed nftContract,
         uint256 indexed tokenId,
@@ -46,72 +45,101 @@ contract BooksMarketplace is ReentrancyGuard, Ownable, IERC721Receiver {
         address indexed seller
     );
 
-    constructor() Ownable(msg.sender) {}
-
-    // List Book for Sale - User must call NFT contract approve() before this
     function listBook(
-        address _nftContract,
-        uint256 _tokenId,
-        uint256 _price
+        address nftContract,
+        uint256 tokenId,
+        uint256 price
     ) external nonReentrant {
-        require(_price > 0, "Price must be greater than zero");
-        require(
-            IERC721(_nftContract).isApprovedForAll(msg.sender, address(this)) ||
-                IERC721(_nftContract).getApproved(_tokenId) == address(this),
-            "Marketplace not approved"
-        );
+        if (price == 0) {
+            revert PriceMustBeGreaterThanZero();
+        }
 
-        listings[_nftContract][_tokenId] = Listing({
-            price: _price,
+        if (price > type(uint96).max) {
+            revert PriceExceedsMax();
+        }
+
+        IERC721 nft = IERC721(nftContract);
+        if (nft.ownerOf(tokenId) != msg.sender) {
+            revert NotTokenOwner();
+        }
+
+        Listing memory existingListing = listings[nftContract][tokenId];
+        if (existingListing.price > 0 && existingListing.seller == msg.sender) {
+            revert AlreadyListed();
+        }
+
+        if (!_isMarketplaceApproved(nft, msg.sender, tokenId)) {
+            revert MarketplaceNotApproved();
+        }
+
+        listings[nftContract][tokenId] = Listing({
+            price: uint96(price),
             seller: msg.sender
         });
 
-        emit BookListed(_nftContract, _tokenId, msg.sender, _price);
+        emit BookListed(nftContract, tokenId, msg.sender, price);
     }
 
     function buyBook(
-        address _nftContract,
-        uint256 _tokenId
+        address nftContract,
+        uint256 tokenId
     ) external payable nonReentrant {
-        Listing memory item = listings[_nftContract][_tokenId];
+        Listing memory item = listings[nftContract][tokenId];
+        if (item.price == 0) {
+            revert ItemNotListed();
+        }
 
-        require(item.price > 0, "Item not listed for sale");
-        require(msg.value == item.price, "Incorrect price sent");
-        require(msg.sender != item.seller, "Cannot buy your own book");
+        if (msg.value != item.price) {
+            revert IncorrectPriceSent(item.price, msg.value);
+        }
 
-        // Cleanup listing first to prevent reentrancy
-        delete listings[_nftContract][_tokenId];
+        if (msg.sender == item.seller) {
+            revert CannotBuyOwnBook();
+        }
 
-        // Transfer ETH to Seller
+        IERC721 nft = IERC721(nftContract);
+        if (nft.ownerOf(tokenId) != item.seller) {
+            revert SellerNoLongerOwnsToken();
+        }
+
+        if (!_isMarketplaceApproved(nft, item.seller, tokenId)) {
+            revert MarketplaceNotApproved();
+        }
+
+        delete listings[nftContract][tokenId];
+
+        nft.safeTransferFrom(item.seller, msg.sender, tokenId);
+
         (bool success, ) = payable(item.seller).call{value: msg.value}("");
-        require(success, "ETH Transfer to seller failed");
+        if (!success) {
+            revert TransferToSellerFailed();
+        }
 
-        // Transfer NFT to Buyer
-        IERC721(_nftContract).safeTransferFrom(
-            item.seller,
-            msg.sender,
-            _tokenId
-        );
-
-        emit BookSold(
-            _nftContract,
-            _tokenId,
-            msg.sender,
-            item.seller,
-            msg.value
-        );
+        emit BookSold(nftContract, tokenId, msg.sender, item.seller, msg.value);
     }
 
-    function cancelListing(
-        address _nftContract,
-        uint256 _tokenId
-    ) external nonReentrant {
-        Listing memory item = listings[_nftContract][_tokenId];
+    function cancelListing(address nftContract, uint256 tokenId) external {
+        Listing memory item = listings[nftContract][tokenId];
+        if (item.price == 0) {
+            revert ItemNotListed();
+        }
 
-        require(item.seller == msg.sender, "You are not the seller");
+        if (item.seller != msg.sender) {
+            revert NotSeller();
+        }
 
-        delete listings[_nftContract][_tokenId];
+        delete listings[nftContract][tokenId];
 
-        emit ListingCancelled(_nftContract, _tokenId, msg.sender);
+        emit ListingCancelled(nftContract, tokenId, msg.sender);
+    }
+
+    function _isMarketplaceApproved(
+        IERC721 nft,
+        address owner,
+        uint256 tokenId
+    ) internal view returns (bool) {
+        return
+            nft.isApprovedForAll(owner, address(this)) ||
+            nft.getApproved(tokenId) == address(this);
     }
 }
