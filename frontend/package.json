@@ -3,16 +3,19 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://mhel14.github.io/web3-book-marketplace/",
   "engines": {
     "node": ">=20.19.5"
   },
   "scripts": {
+    "check:node": "node -e \"const [major, minor, patch] = process.versions.node.split('.').map(Number); const ok = major > 20 || (major === 20 && (minor > 19 || (minor === 19 && patch >= 5))); if (!ok) { console.error('Node 20.19.5+ is required for the frontend. Run nvm use.'); process.exit(1); }\"",
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "preview": "vite preview"
+    "build": "npm run check:node && tsc -b && vite build",
+    "postbuild": "cp dist/index.html dist/404.html",
+    "lint": "npm run check:node && eslint .",
+    "test": "npm run check:node && vitest run",
+    "test:watch": "npm run check:node && vitest",
+    "preview": "npm run check:node && vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
