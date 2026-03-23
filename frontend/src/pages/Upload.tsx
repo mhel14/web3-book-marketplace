@@ -179,7 +179,10 @@ export default function Upload() {
       });
       resetForm();
     } catch (error) {
-      console.error(error);
+      console.error(
+        'Upload flow failed:',
+        error instanceof Error ? error.message : 'Unknown upload error',
+      );
       const message = error instanceof Error ? error.message : 'The upload flow failed.';
       setStatus({
         title: 'Upload failed',

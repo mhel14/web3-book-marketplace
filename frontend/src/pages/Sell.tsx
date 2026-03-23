@@ -9,6 +9,7 @@ import StatusBanner from '../components/ui/StatusBanner';
 import { useToast } from '../components/ui/ToastProvider';
 import { useWallet } from '../context/WalletContext';
 import { fetchBooksByOwner, type IBook } from '../services/bookService';
+import { getMarketplaceErrorMessage, logHandledContractError } from '../utils/contractErrors';
 import { MARKETPLACE_CONTRACT_ADDRESS, NFT_CONTRACT_ADDRESS } from '../utils/env';
 import marketPlaceContractData from '../utils/BooksMarketplace.json';
 import { createContract, getSigner } from '../utils/web3';
@@ -130,13 +131,16 @@ export default function Sell() {
       setMyBooks((current) => current.filter((book) => book.tokenId !== selectedBook.tokenId));
       setSelectedBook(null);
     } catch (error: any) {
-      console.error(error);
+      logHandledContractError('Sell listing failed', error);
+      const marketplaceMessage = getMarketplaceErrorMessage(error);
       const message =
         error.code === 'ACTION_REJECTED'
           ? 'User denied transaction signature.'
+          : marketplaceMessage
+            ? marketplaceMessage
           : error instanceof Error
-            ? error.message
-            : 'Unable to list this book right now.';
+              ? error.message
+              : 'Unable to list this book right now.';
       setStatus({
         tone: 'error',
         title: 'Listing failed',

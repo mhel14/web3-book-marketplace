@@ -76,7 +76,10 @@ export async function fetchBooksByOwner(ownerAddress: string): Promise<IBook[]> 
 
     return books.filter((book): book is IBook => Boolean(book));
   } catch (error) {
-    console.error('Error in fetchBooksByOwner:', error);
+    console.error(
+      'fetchBooksByOwner failed:',
+      error instanceof Error ? error.message : 'Unknown book service error',
+    );
     throw new Error('Unable to load books for the connected wallet.');
   }
 }

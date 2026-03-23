@@ -29,7 +29,10 @@ export default function MyLibrary() {
         const ownedBooks = await fetchBooksByOwner(selectedAccount);
         setBooks(ownedBooks);
       } catch (err) {
-        console.error(err);
+        console.error(
+          'MyLibrary load failed:',
+          err instanceof Error ? err.message : 'Unknown library error',
+        );
         setError(err instanceof Error ? err.message : 'Unable to load your library.');
       } finally {
         setIsLoading(false);

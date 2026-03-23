@@ -8,6 +8,7 @@ import PageHeader from '../components/ui/PageHeader';
 import StatusBanner from '../components/ui/StatusBanner';
 import { useToast } from '../components/ui/ToastProvider';
 import { useWallet } from '../context/WalletContext';
+import { getMarketplaceErrorMessage, logHandledContractError } from '../utils/contractErrors';
 import { MARKETPLACE_CONTRACT_ADDRESS, NFT_CONTRACT_ADDRESS } from '../utils/env';
 import { resolveIPFSUrl, shortAddress } from '../utils/utils';
 import { getReadContract, getWriteContract } from '../utils/web3';
@@ -189,13 +190,16 @@ export default function Marketplace() {
         tone: 'success',
       });
     } catch (error: any) {
-      console.error(error);
+      logHandledContractError('Marketplace purchase failed', error);
+      const marketplaceMessage = getMarketplaceErrorMessage(error);
       const message =
         error.code === 'ACTION_REJECTED'
           ? 'User denied transaction signature.'
+          : marketplaceMessage
+            ? marketplaceMessage
           : error instanceof Error
-            ? error.message
-            : 'Transaction failed.';
+              ? error.message
+              : 'Transaction failed.';
       setStatus({
         tone: 'error',
         title: 'Purchase failed',
@@ -257,13 +261,16 @@ export default function Marketplace() {
         tone: 'success',
       });
     } catch (error: any) {
-      console.error(error);
+      logHandledContractError('Marketplace removal failed', error);
+      const marketplaceMessage = getMarketplaceErrorMessage(error);
       const message =
         error.code === 'ACTION_REJECTED'
           ? 'User denied transaction signature.'
+          : marketplaceMessage
+            ? marketplaceMessage
           : error instanceof Error
-            ? error.message
-            : 'Unable to remove this listing.';
+              ? error.message
+              : 'Unable to remove this listing.';
       setStatus({
         tone: 'error',
         title: 'Removal failed',

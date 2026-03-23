@@ -100,4 +100,56 @@ describe('listing flow', () => {
     expect(screen.getByText('Listing complete')).toBeInTheDocument();
     expect(screen.queryByText('My Listed Book')).not.toBeInTheDocument();
   });
+
+  it('shows a friendly error when the selected book is already listed', async () => {
+    mocks.fetchBooksByOwner.mockResolvedValue([
+      {
+        tokenId: '1',
+        title: 'My Listed Book',
+        author: 'Alice',
+        genre: 'Sci-Fi',
+        price: '0.05',
+        isbn: '123',
+        coverUrl: '',
+        bookUrl: '',
+        metadataUrl: 'https://example.com/meta.json',
+      },
+    ]);
+
+    const signer = { address: mocks.walletState.selectedAccount };
+    const nftContract = {
+      isApprovedForAll: vi.fn().mockResolvedValue(true),
+      setApprovalForAll: vi.fn(),
+    };
+    const marketContract = {
+      listBook: vi.fn().mockRejectedValue({
+        code: 'CALL_EXCEPTION',
+        data: '0xa3d582ec',
+      }),
+    };
+
+    mocks.getSigner.mockResolvedValue({ signer });
+    mocks.createContract.mockReturnValueOnce(nftContract).mockReturnValueOnce(marketContract);
+
+    render(<Sell />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByText('My Listed Book'));
+    await user.click(screen.getByRole('button', { name: 'List for Sale' }));
+
+    await waitFor(() => {
+      expect(mocks.pushToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Listing failed',
+          message: 'This book is already listed in the marketplace.',
+          tone: 'error',
+        }),
+      );
+    });
+
+    expect(screen.getByText('Listing failed')).toBeInTheDocument();
+    expect(
+      screen.getByText('This book is already listed in the marketplace.'),
+    ).toBeInTheDocument();
+  });
 });
