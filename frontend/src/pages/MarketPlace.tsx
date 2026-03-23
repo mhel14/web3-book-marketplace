@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserProvider, Contract, EventLog, ethers } from 'ethers';
+import { EventLog, ethers } from 'ethers';
 
 import BookCard from '../components/BookCard';
 import BookCardSkeleton from '../components/ui/BookCardSkeleton';
@@ -9,6 +9,7 @@ import StatusBanner from '../components/ui/StatusBanner';
 import { useToast } from '../components/ui/ToastProvider';
 import { useWallet } from '../context/WalletContext';
 import { resolveIPFSUrl, shortAddress } from '../utils/utils';
+import { getReadContract, getWriteContract } from '../utils/web3';
 
 const NFT_CONTRACT_ADDRESS = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
 const MARKETPLACE_CONTRACT_ADDRESS = import.meta.env.VITE_MARKETPLACE_CONTRACT_ADDRESS;
@@ -66,9 +67,8 @@ export default function Marketplace() {
     });
 
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const marketContract = new Contract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI, provider);
-      const nftContract = new Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, provider);
+      const marketContract = getReadContract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI);
+      const nftContract = getReadContract(NFT_CONTRACT_ADDRESS, NFT_ABI);
 
       // Fetch all events
       const filter = marketContract.filters.BookListed(NFT_CONTRACT_ADDRESS);
@@ -172,9 +172,10 @@ export default function Marketplace() {
     });
 
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const marketContract = new Contract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI, signer);
+      const { contract: marketContract } = await getWriteContract(
+        MARKETPLACE_CONTRACT_ADDRESS,
+        MARKETPLACE_ABI,
+      );
       const tx = await marketContract.buyBook(NFT_CONTRACT_ADDRESS, tokenId, { value: priceWei });
       await tx.wait();
 
@@ -234,9 +235,10 @@ export default function Marketplace() {
     });
 
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const marketContract = new Contract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI, signer);
+      const { contract: marketContract } = await getWriteContract(
+        MARKETPLACE_CONTRACT_ADDRESS,
+        MARKETPLACE_ABI,
+      );
       const tx = await marketContract.cancelListing(NFT_CONTRACT_ADDRESS, tokenId);
       await tx.wait();
 

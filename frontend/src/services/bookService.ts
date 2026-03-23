@@ -1,6 +1,5 @@
-import { BrowserProvider, Contract } from 'ethers';
-
 import { resolveIPFSUrl } from '../utils/utils';
+import { getReadContract } from '../utils/web3';
 
 export const NFT_CONTRACT_ADDRESS = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
 
@@ -34,8 +33,7 @@ export async function fetchBooksByOwner(ownerAddress: string): Promise<IBook[]> 
   }
 
   try {
-    const provider = new BrowserProvider(window.ethereum);
-    const contract = new Contract(NFT_CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+    const contract = getReadContract(NFT_CONTRACT_ADDRESS, CONTRACT_ABI);
     const filter = contract.filters.Transfer(null, ownerAddress);
     const events = await contract.queryFilter(filter);
 

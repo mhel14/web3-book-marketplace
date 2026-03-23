@@ -9,9 +9,10 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { BrowserProvider, ethers, type InterfaceAbi } from 'ethers';
+import { ethers, type InterfaceAbi } from 'ethers';
 
 import { useToast } from '../components/ui/ToastProvider';
+import { getBrowserProvider, getWriteContract } from '../utils/web3';
 
 interface IMintBookNFT {
   (contractAddress: string, ABI: InterfaceAbi, metaCID: string): Promise<void>;
@@ -68,7 +69,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const provider = new BrowserProvider(window.ethereum);
+      const provider = getBrowserProvider();
       const balanceWei = await provider.getBalance(_address);
       setBalance(Number(ethers.formatEther(balanceWei)).toFixed(4));
     } catch (err) {
@@ -188,9 +189,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const provider = new BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(contractAddress, ABI, signer);
+        const { contract } = await getWriteContract(contractAddress, ABI);
         const tx = await contract.mintEBook(metaCID);
         await tx.wait();
 

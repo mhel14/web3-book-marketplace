@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserProvider, Contract, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 import BookCard from '../components/BookCard';
 import BookCardSkeleton from '../components/ui/BookCardSkeleton';
@@ -10,6 +10,7 @@ import { useToast } from '../components/ui/ToastProvider';
 import { useWallet } from '../context/WalletContext';
 import { fetchBooksByOwner, type IBook } from '../services/bookService';
 import marketPlaceContractData from '../utils/BooksMarketplace.json';
+import { createContract, getSigner } from '../utils/web3';
 
 const NFT_CONTRACT_ADDRESS = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
 const MARKETPLACE_CONTRACT_ADDRESS = import.meta.env.VITE_MARKETPLACE_CONTRACT_ADDRESS;
@@ -85,10 +86,9 @@ export default function Sell() {
     });
 
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const nftContract = new Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, signer);
-      const marketContract = new Contract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI, signer);
+      const { signer } = await getSigner();
+      const nftContract = createContract(NFT_CONTRACT_ADDRESS, NFT_ABI, signer);
+      const marketContract = createContract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI, signer);
 
       const isApproved = await nftContract.isApprovedForAll(
         signer.address,
