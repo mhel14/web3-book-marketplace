@@ -21,6 +21,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VITE_NFT_CONTRACT_ADDRESS: ${{ vars.VITE_NFT_CONTRACT_ADDRESS }}
+      VITE_MARKETPLACE_CONTRACT_ADDRESS: ${{ vars.VITE_MARKETPLACE_CONTRACT_ADDRESS }}
+      VITE_PINATA_GATEWAY_DOMAIN: ${{ vars.VITE_PINATA_GATEWAY_DOMAIN }}
+      VITE_PINATA_JWT: ${{ secrets.VITE_PINATA_JWT }}
 
     defaults:
       run:

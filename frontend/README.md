@@ -38,3 +38,9 @@ npm run build
 ## Deployment
 
 The frontend is configured for deployment to GitHub Pages using GitHub Actions.
+Set these repository-level GitHub Actions values before deploying:
+
+- `vars.VITE_NFT_CONTRACT_ADDRESS`
+- `vars.VITE_MARKETPLACE_CONTRACT_ADDRESS`
+- `vars.VITE_PINATA_GATEWAY_DOMAIN`
+- `secrets.VITE_PINATA_JWT`

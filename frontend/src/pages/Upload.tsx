@@ -5,6 +5,7 @@ import StatusBanner from '../components/ui/StatusBanner';
 import { useToast } from '../components/ui/ToastProvider';
 import { useWallet } from '../context/WalletContext';
 import { uploadFileToIPFS, uploadJSONToIPFS } from '../services/pinata';
+import { NFT_CONTRACT_ADDRESS } from '../utils/env';
 import contractData from '../utils/BookStoreNFT.json';
 
 interface FormDataState {
@@ -159,7 +160,7 @@ export default function Upload() {
         message: 'Confirm the mint transaction in your wallet to finish publishing.',
         tone: 'loading',
       });
-      await mintBookNFT(import.meta.env.VITE_NFT_CONTRACT_ADDRESS, contractData.abi, metaCID);
+      await mintBookNFT(NFT_CONTRACT_ADDRESS, contractData.abi, metaCID);
 
       setResults({
         metaUrl: `${gatewayUrl}${metaCID}`,

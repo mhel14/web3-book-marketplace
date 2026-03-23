@@ -8,11 +8,9 @@ import PageHeader from '../components/ui/PageHeader';
 import StatusBanner from '../components/ui/StatusBanner';
 import { useToast } from '../components/ui/ToastProvider';
 import { useWallet } from '../context/WalletContext';
+import { MARKETPLACE_CONTRACT_ADDRESS, NFT_CONTRACT_ADDRESS } from '../utils/env';
 import { resolveIPFSUrl, shortAddress } from '../utils/utils';
 import { getReadContract, getWriteContract } from '../utils/web3';
-
-const NFT_CONTRACT_ADDRESS = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
-const MARKETPLACE_CONTRACT_ADDRESS = import.meta.env.VITE_MARKETPLACE_CONTRACT_ADDRESS;
 const NFT_ABI = [
   'function tokenURI(uint256 tokenId) view returns (string)',
   'function ownerOf(uint256 tokenId) view returns (address)',

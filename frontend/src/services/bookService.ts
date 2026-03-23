@@ -1,7 +1,6 @@
 import { resolveIPFSUrl } from '../utils/utils';
+import { NFT_CONTRACT_ADDRESS } from '../utils/env';
 import { getReadContract } from '../utils/web3';
-
-export const NFT_CONTRACT_ADDRESS = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
 
 const CONTRACT_ABI = [
   'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
