@@ -367,9 +367,6 @@ export default function Upload() {
               Live Preview
             </p>
             <h2 className='text-2xl font-semibold tracking-tight text-white'>Book details</h2>
-            <p className='text-sm leading-6 text-zinc-400'>
-              Keep track of selected files thru generated IPFS links after a successful publish.
-            </p>
           </div>
 
           <div className='grid gap-4'>
