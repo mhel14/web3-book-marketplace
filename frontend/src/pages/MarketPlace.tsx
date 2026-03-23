@@ -19,6 +19,7 @@ const NFT_ABI = [
 const MARKETPLACE_ABI = [
   'function listings(address, uint256) view returns (uint256 price, address seller)',
   'function buyBook(address _nftContract, uint256 _tokenId) payable',
+  'function cancelListing(address _nftContract, uint256 _tokenId)',
   'event BookListed(address indexed nftContract, uint256 indexed tokenId, address indexed seller, uint256 price)',
 ];
 
@@ -38,6 +39,7 @@ export default function Marketplace() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [status, setStatus] = useState<{
     tone: 'error' | 'loading' | 'success';
     title: string;
@@ -205,6 +207,68 @@ export default function Marketplace() {
     }
   };
 
+  const handleRemoveListing = async (tokenId: string) => {
+    if (!window.ethereum) {
+      setStatus({
+        tone: 'error',
+        title: 'Wallet unavailable',
+        message: 'MetaMask needs to be available before removing your listing.',
+      });
+      return;
+    }
+
+    if (!selectedAccount) {
+      setStatus({
+        tone: 'error',
+        title: 'Wallet required',
+        message: 'Connect the seller wallet before removing a listed book.',
+      });
+      return;
+    }
+
+    setRemovingId(tokenId);
+    setStatus({
+      tone: 'loading',
+      title: 'Removing listing',
+      message: 'Confirm the cancellation transaction in MetaMask to delist your book.',
+    });
+
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const marketContract = new Contract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI, signer);
+      const tx = await marketContract.cancelListing(NFT_CONTRACT_ADDRESS, tokenId);
+      await tx.wait();
+
+      setListings((current) => current.filter((listing) => listing.tokenId !== tokenId));
+      setStatus({
+        tone: 'success',
+        title: 'Listing removed',
+        message: 'Your book was removed from the marketplace successfully.',
+      });
+      pushToast({
+        title: 'Listing removed',
+        message: 'The book is no longer available for purchase.',
+        tone: 'success',
+      });
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : 'Unable to remove this listing.';
+      setStatus({
+        tone: 'error',
+        title: 'Removal failed',
+        message,
+      });
+      pushToast({
+        title: 'Removal failed',
+        message,
+        tone: 'error',
+      });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   return (
     <div className='space-y-6'>
       <PageHeader
@@ -270,18 +334,24 @@ export default function Marketplace() {
                     </div>
                     <button
                       type='button'
-                      onClick={() => handleBuy(book.tokenId, book.priceWei)}
-                      disabled={buyingId === book.tokenId || isOwnListing}
+                      onClick={() =>
+                        isOwnListing
+                          ? handleRemoveListing(book.tokenId)
+                          : handleBuy(book.tokenId, book.priceWei)
+                      }
+                      disabled={buyingId === book.tokenId || removingId === book.tokenId}
                       className={`inline-flex w-full items-center justify-center rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
                         isOwnListing
-                          ? 'cursor-not-allowed border-white/10 bg-white/[0.04] text-zinc-500'
+                          ? 'border-amber-300/20 bg-amber-500/12 text-white hover:border-amber-300/30 hover:bg-amber-500/18'
                           : 'border-emerald-300/20 bg-emerald-500/12 text-white hover:border-emerald-300/30 hover:bg-emerald-500/18'
                       } disabled:opacity-60`}
                     >
-                      {buyingId === book.tokenId
+                      {removingId === book.tokenId
+                        ? 'Removing...'
+                        : buyingId === book.tokenId
                         ? 'Purchasing...'
                         : isOwnListing
-                          ? 'Your Listing'
+                          ? 'Remove Listing'
                           : 'Buy Now'}
                     </button>
                   </div>
