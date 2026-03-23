@@ -81,10 +81,17 @@ describe('listing flow', () => {
     await waitFor(() => {
       expect(nftContract.isApprovedForAll).toHaveBeenCalledWith(
         mocks.walletState.selectedAccount,
-        expect.anything(),
+        import.meta.env.VITE_MARKETPLACE_CONTRACT_ADDRESS,
       );
-      expect(nftContract.setApprovalForAll).toHaveBeenCalledTimes(1);
-      expect(marketContract.listBook).toHaveBeenCalledTimes(1);
+      expect(nftContract.setApprovalForAll).toHaveBeenCalledWith(
+        import.meta.env.VITE_MARKETPLACE_CONTRACT_ADDRESS,
+        true,
+      );
+      expect(marketContract.listBook).toHaveBeenCalledWith(
+        import.meta.env.VITE_NFT_CONTRACT_ADDRESS,
+        '1',
+        50000000000000000n,
+      );
       expect(mocks.pushToast).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Book listed', tone: 'success' }),
       );
